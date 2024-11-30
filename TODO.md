@@ -1,0 +1,3 @@
+- [ ] Pieces and their moves
+- [ ] Board
+- [ ] Print the board
