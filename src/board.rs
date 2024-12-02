@@ -45,7 +45,7 @@ impl Board {
                 let charPiece = 
                     match square {
                         Square::NonEmpty(piece) => piece.display(),
-                        Square::Empty => " ",
+                        Square::Empty => String::from(" "),
                     };
                 print!(" | {}",charPiece);
             }
