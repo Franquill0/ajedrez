@@ -2,17 +2,11 @@ mod pieces;
 mod board;
 
 use board::{Board, Position};
-use pieces::{Piece, Color, EnPasant};
+use pieces::{Piece, Color};
 
 fn main(){
-    let mut myBoard =  Board::newBoard();
-    let pos1 = Position {x : 2, y : 2};
-    let pos2 =  Position {x : 6, y : 8};
-    let pos3 =  Position {x : 4, y : 1};
-    let pawn = Piece::Pawn(Color::Black,EnPasant::Enable);
+    let mut my_board = Board::new_board();
+    my_board.initial_position();
 
-    myBoard.placePiece(pawn.clone(),&pos1);
-    myBoard.placePiece(pawn.clone(),&pos2);
-    myBoard.placePiece(pawn.clone(),&pos3);
-    myBoard.display();
+    my_board.display();
 }

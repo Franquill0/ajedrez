@@ -10,12 +10,7 @@ pub enum Piece {
     Bishop(Color),
     Knight(Color),
     Rook(Color),
-    Pawn(Color,EnPasant),
-}
-#[derive(Clone, Copy)]
-pub enum EnPasant {
-    Enable,
-    Disable,
+    Pawn(Color),
 }
 
 #[derive(Clone, Copy)]
@@ -25,10 +20,16 @@ pub enum Color {
 }
 
 impl Square {
-    pub fn getPiece(self) -> Option<Piece> {
+    pub fn get_piece(self) -> Option<Piece> {
         match self {
             Square::Empty => None,
             Square::NonEmpty(piece) => Some(piece),
+        }
+    }
+    pub fn display(&self) -> String {
+        match self {
+            Square::NonEmpty(piece) => piece.display(),
+            Square::Empty => String::from(" "),
         }
     }
 }
@@ -40,18 +41,17 @@ impl Piece {
             Piece::Queen(_)  =>"q",
             Piece::Knight(_) =>"n",
             Piece::Bishop(_) =>"b",
-            Piece::Pawn(_,_) =>"p",
+            Piece::Pawn(_)   =>"p",
             Piece::Rook(_)   =>"r",
         };
-        match self.getColor() {
+        match self.get_color() {
             Color::White => piece.to_uppercase(),
             _ => piece.to_string(),
         }
     }
-    pub fn getColor(self) -> Color {
+    pub fn get_color(self) -> Color {
         match self {
-            Piece::King(color) | Piece::Queen(color) | Piece::Knight(color) | Piece::Bishop(color) | Piece::Rook(color) => color,
-            Piece::Pawn(color,_) => color,
+            Piece::King(color) | Piece::Queen(color) | Piece::Knight(color) | Piece::Bishop(color) | Piece::Rook(color) | Piece::Pawn(color) => color,
         }
     }
 }
