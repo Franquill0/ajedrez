@@ -6,15 +6,20 @@ pub struct Board {
 #[derive(Clone, Copy)]
 pub struct Position {
     // x, y in [1,8]
-    pub x: u8,
-    pub y: u8,
+    x: u8,
+    y: u8,
 }
 
 impl Position {
+    pub fn new_position(x: u8, y: u8) -> Self {
+        assert!( 0 < x && x < 9, "Expected 0 < x < 9, found {}",x);
+        assert!( 0 < y && y < 9, "Expected 0 < y < 9, found {}",y);
+        Self {x: x, y: y}
+    }
     fn get_y_board(&self) -> usize {
         (8 - self.y) as usize
     }
-    fn get_x_board(&self) -> usize{
+    fn get_x_board(&self) -> usize {
         (self.x - 1) as usize
     }
 }
@@ -25,18 +30,16 @@ impl Board {
             board : [[ Square::Empty ; 8] ; 8],
         }
     }
-    pub fn can_move(&self, piece: &Piece, initial_pos: &Position, final_pos: &Position) -> bool{
+    pub fn can_move(&self, initial_pos: &Position, final_pos: &Position) -> bool {
         true
     }
     pub fn place_piece(&mut self, piece: Piece, position: &Position){
         let x = position.get_x_board();
         let y = position.get_y_board();
-        assert!(x < 8, "Expected 0 < x < 9, found {}",x);
-        assert!(y < 8, "Expected 0 < y < 9, found {}",y);
         self.board[y][x] = Square::NonEmpty(piece);
     }
     pub fn place_piece_at(&mut self, piece: Piece, x: u8, y: u8){
-        let pos = Position {x: x, y: y};
+        let pos = Position::new_position(x,y);
         self.place_piece(piece, &pos);
     }
     fn remove_piece(&mut self, position: &Position){

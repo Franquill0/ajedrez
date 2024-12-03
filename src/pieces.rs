@@ -44,7 +44,7 @@ impl Piece {
             Piece::Pawn(_)   =>"p",
             Piece::Rook(_)   =>"r",
         };
-        match self.get_color() {
+        match self.get_color(){
             Color::White => piece.to_uppercase(),
             _ => piece.to_string(),
         }
