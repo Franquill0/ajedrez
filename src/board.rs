@@ -51,9 +51,9 @@ impl Board {
         for row in self.board.iter() {
             for square in row.iter() {
                 let char_piece = square.display();
-                print!(" | {}",char_piece);
+                print!(" {}",char_piece);
             }
-            println!(" |");
+            println!(" ");
         }
     }
     pub fn initial_position(&mut self){
@@ -71,7 +71,7 @@ impl Board {
                     x = 1;
                 },
                 _ => {
-                    let piece = match Self::piece_from_char(&c) {
+                    let piece = match Self::piece_from_char(c) {
                         Ok(p) => p,
                         Err(error) => panic!("{}", error),
                     };
@@ -81,7 +81,7 @@ impl Board {
             };
         };
     }
-    fn piece_from_char(char_piece: &char) -> Result<Piece, String> {
+    fn piece_from_char(char_piece: char) -> Result<Piece, String> {
         Piece::piece_from_char(char_piece)
     }
 }

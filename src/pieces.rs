@@ -54,7 +54,7 @@ impl Piece {
             Piece::King(color) | Piece::Queen(color) | Piece::Knight(color) | Piece::Bishop(color) | Piece::Rook(color) | Piece::Pawn(color) => color,
         }
     }
-    pub fn piece_from_char(char_piece: &char) -> Result<Piece, String> {
+    pub fn piece_from_char(char_piece: char) -> Result<Piece, String> {
         let color =
             if char_piece.is_uppercase() {
                 Color::White
