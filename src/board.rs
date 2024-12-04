@@ -71,32 +71,18 @@ impl Board {
                     x = 1;
                 },
                 _ => {
-                    let piece = Self::piece_from_char(&c);
+                    let piece = match Self::piece_from_char(&c) {
+                        Ok(p) => p,
+                        Err(error) => panic!("{}", error),
+                    };
                     self.place_piece_at(piece,x,y);
                     x += 1;
                 },
             };
         };
     }
-    fn piece_from_char(char_piece: &char) -> Piece {
-        let color =
-            if char_piece.is_uppercase() {
-                Color::White
-            } else {
-                Color::Black
-        };
-        let piece = char_piece.to_lowercase().next().unwrap();
-        match piece {
-            'k' => Piece::King(color),
-            'q' => Piece::Queen(color),
-            'b' => Piece::Bishop(color),
-            'n' => Piece::Knight(color),
-            'r' => Piece::Rook(color),
-            'p' => Piece::Pawn(color),
-            _ => {
-                panic!("{} no se reconoce como pieza!", piece);
-            },
-        }
+    fn piece_from_char(char_piece: &char) -> Result<Piece, String> {
+        Piece::piece_from_char(char_piece)
     }
 }
 

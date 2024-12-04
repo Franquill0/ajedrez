@@ -54,4 +54,22 @@ impl Piece {
             Piece::King(color) | Piece::Queen(color) | Piece::Knight(color) | Piece::Bishop(color) | Piece::Rook(color) | Piece::Pawn(color) => color,
         }
     }
+    pub fn piece_from_char(char_piece: &char) -> Result<Piece, String> {
+        let color =
+            if char_piece.is_uppercase() {
+                Color::White
+            } else {
+                Color::Black
+        };
+        let piece = char_piece.to_lowercase().next().unwrap();
+        match piece {
+            'k' => Ok(Piece::King(color)),
+            'q' => Ok(Piece::Queen(color)),
+            'b' => Ok(Piece::Bishop(color)),
+            'n' => Ok(Piece::Knight(color)),
+            'r' => Ok(Piece::Rook(color)),
+            'p' => Ok(Piece::Pawn(color)),
+            _ => Err(format!("'{}' not a piece!",piece)),
+        }
+    }
 }
