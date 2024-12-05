@@ -2,12 +2,18 @@ use crate::pieces::{Square, Piece, Color};
 
 pub struct Board {
     board: [[ Square ; 8] ; 8],
+    en_pasant: EnPasant,
 }
 #[derive(Clone, Copy)]
 pub struct Position {
     // x, y in [1,8]
     x: u8,
     y: u8,
+}
+#[derive(Clone, Copy)]
+enum EnPasant {
+    Enable(Position),
+    Disable,
 }
 
 impl Position {
@@ -35,13 +41,16 @@ impl Position {
         self.x == position.get_x()
     }
     pub fn is_same_diagonal(&self, position: &Position) -> bool {
+        let distances = self.distances(position);
+        distances[0] == distances[1]
+    }
+    pub fn distances(&self, position: &Position) -> [i32; 2] {
         let distance_x = self.x - position.get_x();
         let distance_x = (distance_x as i32).abs();
         let distance_y = self.y - position.get_y();
         let distance_y = (distance_y as i32).abs();
-        distance_x == distance_y
+        [distance_x, distance_y]
     }
-
 }
 impl PartialEq for Position {
     fn eq(&self, other: &Self) -> bool {
@@ -53,6 +62,7 @@ impl Board {
     pub fn new_board() -> Board {
         Board {
             board : [[ Square::Empty ; 8] ; 8],
+            en_pasant: EnPasant::Disable,
         }
     }
     pub fn can_move(&self, initial_pos: &Position, final_pos: &Position) -> bool {
@@ -127,6 +137,12 @@ impl Board {
             }
         }
         panic!("No kings on the board!");
+    }
+    pub fn get_en_pasant(&self) -> Option<Position> {
+        match self.en_pasant {
+            EnPasant::Enable(position) => Some(position.clone()),
+            EnPasant::Disable => None,
+        }
     }
 }
 
