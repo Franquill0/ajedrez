@@ -16,11 +16,36 @@ impl Position {
         assert!( 0 < y && y < 9, "Expected 0 < y < 9, found {}",y);
         Self {x: x, y: y}
     }
+    pub fn get_x(&self) -> u8 {
+        self.x
+    }
+    pub fn get_y(&self) -> u8 {
+        self.y
+    }
     fn get_y_board(&self) -> usize {
         (8 - self.y) as usize
     }
     fn get_x_board(&self) -> usize {
         (self.x - 1) as usize
+    }
+    pub fn is_same_row(&self, position: &Position) -> bool {
+        self.y == position.get_y()
+    }
+    pub fn is_same_column(&self, position: &Position) -> bool {
+        self.x == position.get_x()
+    }
+    pub fn is_same_diagonal(&self, position: &Position) -> bool {
+        let distance_x = self.x - position.get_x();
+        let distance_x = (distance_x as i32).abs();
+        let distance_y = self.y - position.get_y();
+        let distance_y = (distance_y as i32).abs();
+        distance_x == distance_y
+    }
+
+}
+impl PartialEq for Position {
+    fn eq(&self, other: &Self) -> bool {
+        self.x == other.x && self.y == other.y
     }
 }
 
@@ -71,10 +96,11 @@ impl Board {
                     x = 1;
                 },
                 _ => {
-                    let piece = match Self::piece_from_char(c) {
-                        Ok(p) => p,
-                        Err(error) => panic!("{}", error),
-                    };
+                    let piece = 
+                        match Self::piece_from_char(c) {
+                            Ok(p) => p,
+                            Err(error) => panic!("{}", error),
+                        };
                     self.place_piece_at(piece,x,y);
                     x += 1;
                 },
@@ -83,6 +109,24 @@ impl Board {
     }
     fn piece_from_char(char_piece: char) -> Result<Piece, String> {
         Piece::piece_from_char(char_piece)
+    }
+    fn is_white_in_check(&self) -> bool {
+        false
+    }
+    fn is_black_in_check(&self) -> bool {
+        false
+    }
+    fn find_king(&self, color: Color) -> Position {
+        for (row_index, row) in self.board.iter().enumerate() {
+            for (col_index, square) in row.iter().enumerate() {
+                if let Square::NonEmpty(piece) = square {
+                    if Piece::is_king(piece, &color) {
+                        return Position::new_position((col_index+1) as u8, (8-row_index) as u8);
+                    }
+                };
+            }
+        }
+        panic!("No kings on the board!");
     }
 }
 

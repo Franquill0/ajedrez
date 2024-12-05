@@ -1,3 +1,4 @@
+use crate::board::Position;
 #[derive(Clone, Copy)]
 pub enum Square {
     Empty,
@@ -13,7 +14,7 @@ pub enum Piece {
     Pawn(Color),
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 pub enum Color {
     Black,
     White,
@@ -51,7 +52,12 @@ impl Piece {
     }
     pub fn get_color(self) -> Color {
         match self {
-            Piece::King(color) | Piece::Queen(color) | Piece::Knight(color) | Piece::Bishop(color) | Piece::Rook(color) | Piece::Pawn(color) => color,
+            Piece::King(color)   |
+            Piece::Queen(color)  |
+            Piece::Knight(color) |
+            Piece::Bishop(color) |
+            Piece::Rook(color)   |
+            Piece::Pawn(color) => color,
         }
     }
     pub fn piece_from_char(char_piece: char) -> Result<Piece, String> {
@@ -72,4 +78,28 @@ impl Piece {
             _ => Err(format!("'{}' not a piece!",piece)),
         }
     }
+    pub fn is_king(piece: &Piece, color: &Color) -> bool {
+        if let Piece::King(c) = *piece {
+            if *color == c {
+                return true;
+            }
+        }
+        false
+    }
+    pub fn can_move(&self, initial_pos: &Position, final_pos: &Position) -> bool {
+        if initial_pos == final_pos {
+            return false;
+        }
+        match self {
+            Piece::Queen(_)  => initial_pos.is_same_row(final_pos) || initial_pos.is_same_column(final_pos) || initial_pos.is_same_diagonal(final_pos),
+            Piece::Bishop(_) => initial_pos.is_same_diagonal(final_pos),
+            Piece::Rook(_)   => initial_pos.is_same_row(final_pos) || initial_pos.is_same_column(final_pos),
+            // TODO
+            Piece::King(_)   => true,
+            Piece::Knight(_) => true,
+            Piece::Pawn(_)   => true,
+        }
+
+    }
 }
+
