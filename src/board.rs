@@ -65,9 +65,6 @@ impl Board {
             en_pasant: EnPasant::Disable,
         }
     }
-    pub fn can_move(&self, initial_pos: &Position, final_pos: &Position) -> bool {
-        true
-    }
     pub fn place_piece(&mut self, piece: Piece, position: &Position){
         let x = position.get_x_board();
         let y = position.get_y_board();
@@ -143,6 +140,49 @@ impl Board {
             EnPasant::Enable(position) => Some(position.clone()),
             EnPasant::Disable => None,
         }
+    }
+    pub fn can_move(&self, initial_pos: &Position, final_pos: &Position) -> bool {
+        if *initial_pos == *final_pos {
+            return false;
+        }
+        let piece = 
+            match self.get_piece(initial_pos) {
+                Some(p) => p,
+                None => return false,
+        };
+        match piece {
+            Piece::Queen(_)  => Self::can_queen_move(initial_pos, final_pos),
+            Piece::Rook(_)   => Self::can_rook_move(initial_pos, final_pos),
+            Piece::Knight(_) => Self::can_knight_move(initial_pos, final_pos),
+            Piece::King(_)   => Self::can_king_move(initial_pos, final_pos),
+            Piece::Bishop(_) => Self::can_bishop_move(initial_pos, final_pos),
+            Piece::Pawn(_)   => self.can_pawn_move(initial_pos, final_pos),
+        }
+    }
+    fn can_queen_move(initial_pos: &Position, final_pos: &Position) -> bool {
+        initial_pos.is_same_row(final_pos) || initial_pos.is_same_column(final_pos) || initial_pos.is_same_diagonal(final_pos)
+    }
+    fn can_rook_move(initial_pos: &Position, final_pos: &Position) -> bool {
+        initial_pos.is_same_row(final_pos) || initial_pos.is_same_column(final_pos)
+    }
+    fn can_bishop_move(initial_pos: &Position, final_pos: &Position) -> bool {
+        initial_pos.is_same_diagonal(final_pos)
+    }
+    fn can_king_move(initial_pos: &Position, final_pos: &Position) -> bool {
+        let distances = initial_pos.distances(final_pos);
+        distances[0] + distances[1] <= 2 && distances[0] < 2 && distances[1] < 2
+    }
+    fn can_knight_move(initial_pos: &Position, final_pos: &Position) -> bool {
+        let distances = initial_pos.distances(final_pos);
+        distances[0] == 2 && distances[1] == 1 || distances[0] == 1 && distances[1] == 2
+    }
+    fn can_pawn_move(&self, initial_pos: &Position, final_pos: &Position) -> bool {
+        unimplemented!()
+    }
+    fn get_piece(&self, position: &Position) -> Option<Piece> {
+        let x = position.get_x_board();
+        let y = position.get_y_board();
+        self.board[y][x].get_piece()
     }
 }
 
