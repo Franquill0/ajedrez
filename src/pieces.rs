@@ -61,6 +61,9 @@ impl Piece {
             Piece::Pawn(color) => *color,
         }
     }
+    pub fn are_same_color(&self, other: &Self) -> bool {
+        self.get_color() == other.get_color()
+    }
     pub fn piece_from_char(char_piece: char) -> Result<Piece, String> {
         let color =
             if char_piece.is_uppercase() {
@@ -79,13 +82,12 @@ impl Piece {
             _ => Err(format!("'{}' not a piece!",piece)),
         }
     }
-    pub fn is_king(piece: &Piece, color: &Color) -> bool {
-        if let Piece::King(c) = *piece {
-            if *color == c {
-                return true;
-            }
+    pub fn is_king(&self) -> bool {
+        if let Piece::King(_) = *self {
+            true
+        } else {
+            false
         }
-        false
     }
 
 }

@@ -3,6 +3,9 @@ use crate::pieces::{Square, Piece, Color};
 pub struct Board {
     board: [[ Square ; 8] ; 8],
     en_pasant: EnPasant,
+    white_castle: Castle,
+    black_castle: Castle,
+    turn: Color,
 }
 #[derive(Clone, Copy)]
 pub struct Position {
@@ -14,6 +17,12 @@ pub struct Position {
 enum EnPasant {
     Enable(Position),
     Disable,
+}
+
+#[derive(Clone, Copy)]
+struct Castle {
+    long: bool,
+    short: bool,
 }
 
 impl Position {
@@ -58,11 +67,29 @@ impl PartialEq for Position {
     }
 }
 
+impl Castle {
+    pub fn is_long_castle_enable(&self) -> bool {
+        self.long
+    }
+    pub fn is_short_castle_enable(&self) -> bool {
+        self.short
+    }
+    pub fn disable_long_castle(&mut self){
+        self.long = false;
+    }
+    pub fn disable_short_castle(&mut self){
+        self.short = false;
+    }
+}
+
 impl Board {
     pub fn new_board() -> Board {
         Board {
             board : [[ Square::Empty ; 8] ; 8],
             en_pasant: EnPasant::Disable,
+            white_castle: Castle {long: true, short: true},
+            black_castle: Castle {long: true, short: true},
+            turn: Color::White,
         }
     }
     pub fn place_piece(&mut self, piece: Piece, position: &Position){
@@ -127,7 +154,7 @@ impl Board {
         for (row_index, row) in self.board.iter().enumerate() {
             for (col_index, square) in row.iter().enumerate() {
                 if let Square::NonEmpty(piece) = square {
-                    if Piece::is_king(piece, &color) {
+                    if piece.is_king() && piece.get_color() == color {
                         return Position::new_position((col_index+1) as u8, (8-row_index) as u8);
                     }
                 };
