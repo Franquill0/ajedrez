@@ -7,6 +7,22 @@ pub struct Board {
     black_castle: Castle,
     turn: Color,
 }
+struct BoardIter {
+    x: u8,
+    y: u8,
+    dir: IteratorDirection,
+}
+#[derive(Clone,Copy)]
+enum IteratorDirection {
+    Up,
+    Down,
+    Right,
+    Left,
+    UpRight,
+    UpLeft,
+    DownRight,
+    DownLeft,
+}
 #[derive(Clone, Copy)]
 pub struct Position {
     // x, y in [1,8]
@@ -23,6 +39,65 @@ enum EnPasant {
 struct Castle {
     long: bool,
     short: bool,
+}
+
+impl IteratorDirection {
+    fn step_x(&self) -> i8 {
+        match self {
+            Self::Right     |
+            Self::UpRight   |
+            Self::DownRight  => 1,
+            Self::Left      |
+            Self::UpLeft    |
+            Self::DownLeft   => -1,
+            _                => 0,
+        }
+    }
+    fn step_y(&self) -> i8 {
+        match self {
+            Self::Up        |
+            Self::UpRight   |
+            Self::UpLeft     => 1,
+            Self::Down      |
+            Self::DownRight |
+            Self::DownLeft   => -1,
+            _                => 0,
+        }
+    }
+}
+
+impl BoardIter {
+    fn new(initial_position: Position, direction: IteratorDirection) -> Self {
+        let initial_x = initial_position.get_x();
+        let initial_y = initial_position.get_y();
+        Self {x: initial_x, y: initial_y, dir: direction}
+    }
+    fn is_in_range(x: i8, y: i8) -> bool {
+        0 < x && x < 9 && 0 < y && y < 9
+    }
+    pub fn get_x(&self) -> u8 {
+        self.x
+    }
+    pub fn get_y(&self) -> u8 {
+        self.y
+    }
+
+}
+
+impl Iterator for BoardIter {
+    type Item = (u8, u8);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let next_x: i8 = self.x as i8 + self.dir.step_x();
+        let next_y: i8 = self.y as i8 + self.dir.step_y();
+        if Self::is_in_range(next_x, next_y){
+            self.x = next_x.try_into().unwrap();
+            self.y = next_y.try_into().unwrap();
+            Some((self.x, self.y))
+        } else {
+            None
+        }
+    }
 }
 
 impl Position {
@@ -43,17 +118,17 @@ impl Position {
     fn get_x_board(&self) -> usize {
         (self.x - 1) as usize
     }
-    pub fn is_same_row(&self, position: &Position) -> bool {
+    pub fn is_same_row(&self, position: Position) -> bool {
         self.y == position.get_y()
     }
-    pub fn is_same_column(&self, position: &Position) -> bool {
+    pub fn is_same_column(&self, position: Position) -> bool {
         self.x == position.get_x()
     }
-    pub fn is_same_diagonal(&self, position: &Position) -> bool {
+    pub fn is_same_diagonal(&self, position: Position) -> bool {
         let distances = self.distances(position);
         distances[0] == distances[1]
     }
-    pub fn distances(&self, position: &Position) -> [i32; 2] {
+    pub fn distances(&self, position: Position) -> [i32; 2] {
         let distance_x = self.x - position.get_x();
         let distance_x = (distance_x as i32).abs();
         let distance_y = self.y - position.get_y();
@@ -92,16 +167,16 @@ impl Board {
             turn: Color::White,
         }
     }
-    pub fn place_piece(&mut self, piece: Piece, position: &Position){
+    pub fn place_piece(&mut self, piece: Piece, position: Position){
         let x = position.get_x_board();
         let y = position.get_y_board();
         self.board[y][x] = Square::NonEmpty(piece);
     }
     pub fn place_piece_at(&mut self, piece: Piece, x: u8, y: u8){
         let pos = Position::new_position(x,y);
-        self.place_piece(piece, &pos);
+        self.place_piece(piece, pos);
     }
-    fn remove_piece(&mut self, position: &Position){
+    fn remove_piece(&mut self, position: Position){
         let x = position.get_x_board();
         let y = position.get_y_board();
         self.board[y][x] = Square::Empty;
@@ -145,9 +220,34 @@ impl Board {
         Piece::piece_from_char(char_piece)
     }
     fn is_white_in_check(&self) -> bool {
-        false
+        self.is_in_check(Color::White)
     }
     fn is_black_in_check(&self) -> bool {
+        self.is_in_check(Color::Black)
+    }
+    fn is_in_check(&self, player: Color) -> bool {
+        let king = self.find_king(player);
+        if self.is_in_check_horizontaly_or_verticaly(king) {
+            return true;
+        }
+        false
+    }
+    fn is_in_check_horizontaly_or_verticaly(&self, king_position: Position) -> bool {
+        let king_color = self.get_piece(king_position).unwrap().get_color();
+        let directions = [IteratorDirection::Up, IteratorDirection::Down, IteratorDirection::Left, IteratorDirection::Right];
+        for direction in directions.iter() {
+            let iterator = BoardIter::new(king_position, *direction);
+            for (col, row) in iterator {
+                let position = Position::new_position(col, row);
+                if let Some(piece) = self.get_piece(position) {
+                    if piece.is_queen_or_rook_of_color(king_color.opposite()){
+                        return true;
+                    } else {
+                        break;
+                    }
+                }
+            }
+        }
         false
     }
     fn find_king(&self, color: Color) -> Position {
@@ -168,8 +268,8 @@ impl Board {
             EnPasant::Disable => None,
         }
     }
-    pub fn can_move(&self, initial_pos: &Position, final_pos: &Position) -> bool {
-        if *initial_pos == *final_pos {
+    pub fn can_move(&self, initial_pos: Position, final_pos: Position) -> bool {
+        if initial_pos == final_pos {
             return false;
         }
         let piece = 
@@ -186,27 +286,27 @@ impl Board {
             Piece::Pawn(_)   => self.can_pawn_move(initial_pos, final_pos),
         }
     }
-    fn can_queen_move(initial_pos: &Position, final_pos: &Position) -> bool {
+    fn can_queen_move(initial_pos: Position, final_pos: Position) -> bool {
         initial_pos.is_same_row(final_pos) || initial_pos.is_same_column(final_pos) || initial_pos.is_same_diagonal(final_pos)
     }
-    fn can_rook_move(initial_pos: &Position, final_pos: &Position) -> bool {
+    fn can_rook_move(initial_pos: Position, final_pos: Position) -> bool {
         initial_pos.is_same_row(final_pos) || initial_pos.is_same_column(final_pos)
     }
-    fn can_bishop_move(initial_pos: &Position, final_pos: &Position) -> bool {
+    fn can_bishop_move(initial_pos: Position, final_pos: Position) -> bool {
         initial_pos.is_same_diagonal(final_pos)
     }
-    fn can_king_move(initial_pos: &Position, final_pos: &Position) -> bool {
+    fn can_king_move(initial_pos: Position, final_pos: Position) -> bool {
         let distances = initial_pos.distances(final_pos);
         distances[0] + distances[1] <= 2 && distances[0] < 2 && distances[1] < 2
     }
-    fn can_knight_move(initial_pos: &Position, final_pos: &Position) -> bool {
+    fn can_knight_move(initial_pos: Position, final_pos: Position) -> bool {
         let distances = initial_pos.distances(final_pos);
         distances[0] == 2 && distances[1] == 1 || distances[0] == 1 && distances[1] == 2
     }
-    fn can_pawn_move(&self, initial_pos: &Position, final_pos: &Position) -> bool {
+    fn can_pawn_move(&self, initial_pos: Position, final_pos: Position) -> bool {
         unimplemented!()
     }
-    fn get_piece(&self, position: &Position) -> Option<Piece> {
+    fn get_piece(&self, position: Position) -> Option<Piece> {
         let x = position.get_x_board();
         let y = position.get_y_board();
         self.board[y][x].get_piece()

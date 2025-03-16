@@ -36,6 +36,15 @@ impl Square {
     }
 }
 
+impl Color {
+    pub fn opposite(&self) -> Self {
+        match self {
+            Self::White => Self::Black,
+            Self::Black => Self::White,
+        }
+    }
+}
+
 impl Piece {
     pub fn display(&self) -> String {
         let piece = match self {
@@ -79,7 +88,7 @@ impl Piece {
             'n' => Ok(Piece::Knight(color)),
             'r' => Ok(Piece::Rook(color)),
             'p' => Ok(Piece::Pawn(color)),
-            _ => Err(format!("'{}' not a piece!",piece)),
+             _  => Err(format!("'{}' not a piece!",piece)),
         }
     }
     pub fn is_king(&self) -> bool {
@@ -89,6 +98,23 @@ impl Piece {
             false
         }
     }
+    pub fn is_queen_or_rook_of_color(&self, color: Color) -> bool {
+        self.is_queen_of_color(color) || self.is_rook_of_color(color)
+    }
+    fn is_queen_of_color(&self, color:Color) -> bool {
+        if let Self::Queen(queen_color) = *self {
+            queen_color == color
+        } else {
+            false
+        }
+    } 
+    fn is_rook_of_color(&self, color:Color) -> bool {
+        if let Self::Rook(queen_color) = *self {
+            queen_color == color
+        } else {
+            false
+        }
+    } 
 
 }
 
