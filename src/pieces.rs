@@ -112,13 +112,30 @@ impl Piece {
     pub fn is_queen_or_rook_of_color(&self, color: Color) -> bool {
         self.is_queen_of_color(color) || self.is_rook_of_color(color)
     }
+    pub fn is_queen_or_bishop_of_color(&self, color: Color) -> bool {
+        self.is_queen_of_color(color) || self.is_bishop_of_color(color)
+    }
+    pub fn is_knight_of_color(&self, color: Color) -> bool {
+        if let Self::Knight(knight_color) = *self {
+            knight_color == color
+        } else {
+            false
+        }
+    }
+    fn is_bishop_of_color(&self, color: Color) -> bool {
+        if let Self::Bishop(bishop_color) = *self {
+            bishop_color == color
+        } else {
+            false
+        }
+    }
     fn is_queen_of_color(&self, color:Color) -> bool {
         if let Self::Queen(queen_color) = *self {
             queen_color == color
         } else {
             false
         }
-    } 
+    }
     fn is_rook_of_color(&self, color:Color) -> bool {
         if let Self::Rook(queen_color) = *self {
             queen_color == color

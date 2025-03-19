@@ -222,20 +222,49 @@ impl Board {
     fn piece_from_char(char_piece: char) -> Result<Piece, String> {
         Piece::piece_from_char(char_piece)
     }
-    fn is_white_in_check(&self) -> bool {
+    pub fn is_white_in_check(&self) -> bool {
         self.is_in_check(Color::White)
     }
-    fn is_black_in_check(&self) -> bool {
+    pub fn is_black_in_check(&self) -> bool {
         self.is_in_check(Color::Black)
     }
     fn is_in_check(&self, player: Color) -> bool {
         let king = self.find_king(player);
-        if self.is_in_check_horizontaly_or_verticaly(king) {
-            return true;
-        } else if self.is_in_check_by_pawn(king) {
-            return true;
-        }// TODO in check by knight and diagonaly
+        return self.is_in_check_horizontaly_or_verticaly(king) ||
+        self.is_in_check_by_pawn(king)   ||
+        self.is_in_check_diagonaly(king) ||
+        self.is_in_check_by_knight(king);
+    }
+    fn is_in_check_by_knight(&self, king_position: Position) -> bool {
+        let king_opposite_color = self.get_piece(king_position).unwrap().get_color().opposite();
+        for position in self.get_possible_moves_of_knight_from(king_position).iter() {
+            match self.get_piece(*position) {
+                Some(piece) => if piece.is_knight_of_color(king_opposite_color) {return true;},
+                None => {},
+            };
+        }
         false
+    }
+    fn get_possible_moves_of_knight_from(&self, position: Position) -> Vec<Position> {
+        let pos_x = position.get_x();
+        let pos_y = position.get_y();
+        let moves = vec![
+            (pos_x+1, pos_y+2),
+            (pos_x+2, pos_y+1),
+            (pos_x-1, pos_y-2),
+            (pos_x-2, pos_y-1),
+            (pos_x+1, pos_y-2),
+            (pos_x-1, pos_y+2),
+            (pos_x+2, pos_y-1),
+            (pos_x-2, pos_y+1),
+        ];
+        let mut possible_moves:Vec<Position> = Vec::new();
+        for (x, y) in moves.iter() {
+            if Position::is_valid_position(*x,*y) {
+                possible_moves.push(Position::new_position(*x,*y));
+            }
+        }
+        return possible_moves;
     }
     fn is_in_check_by_pawn(&self, king_position: Position) -> bool {
         match self.get_piece(king_position) {
@@ -267,6 +296,24 @@ impl Board {
             if let Some(piece) = self.get_piece(pawn_position) {
                 let opposite_king_color = self.get_piece(king_position).unwrap().get_color().opposite();
                 return piece.is_pawn_of_color(opposite_king_color);
+            }
+        }
+        false
+    }
+    fn is_in_check_diagonaly(&self, king_position: Position) -> bool {
+        let king_color = self.get_piece(king_position).unwrap().get_color();
+        let directions = [Direction::UpRight, Direction::UpLeft, Direction::DownRight, Direction::DownLeft];
+        for direction in directions.iter() {
+            let iterator = BoardIter::new(king_position, *direction);
+            for (col, row) in iterator {
+                let position = Position::new_position(col, row);
+                if let Some(piece) = self.get_piece(position) {
+                    if piece.is_queen_or_bishop_of_color(king_color.opposite()){
+                        return true;
+                    } else {
+                        break;
+                    }
+                }
             }
         }
         false
@@ -353,5 +400,17 @@ impl Board {
 }
 
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn initial_position_not_in_check(){
+        let mut my_board = Board::new_board();
+        my_board.initial_position();
+        assert!(!my_board.is_white_in_check());
+        assert!(!my_board.is_black_in_check());
+    }
+}
 
 
