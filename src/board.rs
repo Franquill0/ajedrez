@@ -8,12 +8,12 @@ pub struct Board {
     turn: Color,
 }
 struct BoardIter {
-    x: u8,
-    y: u8,
-    dir: IteratorDirection,
+    x: i8,
+    y: i8,
+    dir: Direction,
 }
 #[derive(Clone,Copy)]
-enum IteratorDirection {
+enum Direction {
     Up,
     Down,
     Right,
@@ -26,8 +26,8 @@ enum IteratorDirection {
 #[derive(Clone, Copy)]
 pub struct Position {
     // x, y in [1,8]
-    x: u8,
-    y: u8,
+    x: i8,
+    y: i8,
 }
 #[derive(Clone, Copy)]
 enum EnPasant {
@@ -41,7 +41,7 @@ struct Castle {
     short: bool,
 }
 
-impl IteratorDirection {
+impl Direction {
     fn step_x(&self) -> i8 {
         match self {
             Self::Right     |
@@ -67,7 +67,7 @@ impl IteratorDirection {
 }
 
 impl BoardIter {
-    fn new(initial_position: Position, direction: IteratorDirection) -> Self {
+    fn new(initial_position: Position, direction: Direction) -> Self {
         let initial_x = initial_position.get_x();
         let initial_y = initial_position.get_y();
         Self {x: initial_x, y: initial_y, dir: direction}
@@ -75,24 +75,24 @@ impl BoardIter {
     fn is_in_range(x: i8, y: i8) -> bool {
         0 < x && x < 9 && 0 < y && y < 9
     }
-    pub fn get_x(&self) -> u8 {
+    pub fn get_x(&self) -> i8 {
         self.x
     }
-    pub fn get_y(&self) -> u8 {
+    pub fn get_y(&self) -> i8 {
         self.y
     }
 
 }
 
 impl Iterator for BoardIter {
-    type Item = (u8, u8);
+    type Item = (i8, i8);
 
     fn next(&mut self) -> Option<Self::Item> {
         let next_x: i8 = self.x as i8 + self.dir.step_x();
         let next_y: i8 = self.y as i8 + self.dir.step_y();
         if Self::is_in_range(next_x, next_y){
-            self.x = next_x.try_into().unwrap();
-            self.y = next_y.try_into().unwrap();
+            self.x = next_x;
+            self.y = next_y;
             Some((self.x, self.y))
         } else {
             None
@@ -101,15 +101,15 @@ impl Iterator for BoardIter {
 }
 
 impl Position {
-    pub fn new_position(x: u8, y: u8) -> Self {
+    pub fn new_position(x: i8, y: i8) -> Self {
         assert!( 0 < x && x < 9, "Expected 0 < x < 9, found {}",x);
         assert!( 0 < y && y < 9, "Expected 0 < y < 9, found {}",y);
         Self {x: x, y: y}
     }
-    pub fn get_x(&self) -> u8 {
+    pub fn get_x(&self) -> i8 {
         self.x
     }
-    pub fn get_y(&self) -> u8 {
+    pub fn get_y(&self) -> i8 {
         self.y
     }
     fn get_y_board(&self) -> usize {
@@ -134,6 +134,9 @@ impl Position {
         let distance_y = self.y - position.get_y();
         let distance_y = (distance_y as i32).abs();
         [distance_x, distance_y]
+    }
+    pub fn is_valid_position(x: i8, y:i8) -> bool {
+        0 < x && x < 9 && 0 < y && y < 9
     }
 }
 impl PartialEq for Position {
@@ -172,7 +175,7 @@ impl Board {
         let y = position.get_y_board();
         self.board[y][x] = Square::NonEmpty(piece);
     }
-    pub fn place_piece_at(&mut self, piece: Piece, x: u8, y: u8){
+    pub fn place_piece_at(&mut self, piece: Piece, x: i8, y: i8){
         let pos = Position::new_position(x,y);
         self.place_piece(piece, pos);
     }
@@ -191,13 +194,13 @@ impl Board {
         }
     }
     pub fn initial_position(&mut self){
-        let mut x:u8 = 1;
-        let mut y:u8 = 8;
+        let mut x:i8 = 1;
+        let mut y:i8 = 8;
         let initial_fen = String::from("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
         for c in initial_fen.chars() {
             match c {
                 c if c.is_digit(10) => {
-                    let spaces = c.to_digit(10).unwrap() as u8;
+                    let spaces = c.to_digit(10).unwrap() as i8;
                     x += spaces;
                 },
                 '/' => {
@@ -229,12 +232,48 @@ impl Board {
         let king = self.find_king(player);
         if self.is_in_check_horizontaly_or_verticaly(king) {
             return true;
+        } else if self.is_in_check_by_pawn(king) {
+            return true;
+        }// TODO in check by knight and diagonaly
+        false
+    }
+    fn is_in_check_by_pawn(&self, king_position: Position) -> bool {
+        match self.get_piece(king_position) {
+            Some(piece) => 
+                if !piece.is_king() {
+                    panic!("Expected King, found {}", piece.display_full_name());
+                },
+            None => panic!("Expected King, found no piece!"),
+        }
+        let king_color = self.get_piece(king_position).unwrap().get_color();
+        match king_color {
+            Color::White => self.is_white_king_in_check_by_pawn(king_position),
+            Color::Black => self.is_black_king_in_check_by_pawn(king_position),
+        }
+    }
+    fn is_white_king_in_check_by_pawn(&self, king_position:Position) -> bool {
+        self.is_king_in_check_by_pawn_in_direction(king_position, Direction::UpRight) || 
+        self.is_king_in_check_by_pawn_in_direction(king_position, Direction::UpLeft)
+    }
+    fn is_black_king_in_check_by_pawn(&self, king_position:Position) -> bool {
+        self.is_king_in_check_by_pawn_in_direction(king_position, Direction::DownRight) || 
+        self.is_king_in_check_by_pawn_in_direction(king_position, Direction::DownLeft)
+    }
+    fn is_king_in_check_by_pawn_in_direction(&self, king_position: Position, direction: Direction) -> bool {
+        let x_pawn_position = king_position.get_x() + direction.step_x();
+        let y_pawn_position = king_position.get_y() + direction.step_y();
+        if Position::is_valid_position(x_pawn_position, y_pawn_position) {
+            let pawn_position = Position::new_position(x_pawn_position, y_pawn_position);
+            if let Some(piece) = self.get_piece(pawn_position) {
+                let opposite_king_color = self.get_piece(king_position).unwrap().get_color().opposite();
+                return piece.is_pawn_of_color(opposite_king_color);
+            }
         }
         false
     }
     fn is_in_check_horizontaly_or_verticaly(&self, king_position: Position) -> bool {
         let king_color = self.get_piece(king_position).unwrap().get_color();
-        let directions = [IteratorDirection::Up, IteratorDirection::Down, IteratorDirection::Left, IteratorDirection::Right];
+        let directions = [Direction::Up, Direction::Down, Direction::Left, Direction::Right];
         for direction in directions.iter() {
             let iterator = BoardIter::new(king_position, *direction);
             for (col, row) in iterator {
@@ -255,7 +294,7 @@ impl Board {
             for (col_index, square) in row.iter().enumerate() {
                 if let Square::NonEmpty(piece) = square {
                     if piece.is_king() && piece.get_color() == color {
-                        return Position::new_position((col_index+1) as u8, (8-row_index) as u8);
+                        return Position::new_position((col_index+1) as i8, (8-row_index) as i8);
                     }
                 };
             }

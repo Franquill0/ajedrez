@@ -46,6 +46,17 @@ impl Color {
 }
 
 impl Piece {
+    pub fn display_full_name(&self) -> String {
+        let piece = match self {
+            Piece::King(_)   =>"King",
+            Piece::Queen(_)  =>"Queen",
+            Piece::Knight(_) =>"Knight",
+            Piece::Bishop(_) =>"Bishop",
+            Piece::Pawn(_)   =>"Pawn",
+            Piece::Rook(_)   =>"Rook",
+        };
+        piece.to_string()
+    }
     pub fn display(&self) -> String {
         let piece = match self {
             Piece::King(_)   =>"k",
@@ -115,6 +126,15 @@ impl Piece {
             false
         }
     } 
+
+    pub fn is_pawn_of_color(&self, color: Color) -> bool {
+        if let Self::Pawn(pawn_color) = *self {
+            pawn_color == color
+        } else {
+            false
+        }
+
+    }
 
 }
 
