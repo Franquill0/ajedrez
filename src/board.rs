@@ -64,6 +64,42 @@ impl Direction {
             _                => 0,
         }
     }
+    fn get_direction_from_to(initial_position: Position, final_position: Position) -> Option<Self> {
+        if initial_position == final_position {
+            return None;
+        }
+        let is_right_to = initial_position.is_right_to(final_position);
+        let is_above = initial_position.is_above(final_position);
+        if initial_position.is_same_row(final_position) {
+            if is_right_to {
+                Some(Self::Left)
+            } else {
+                Some(Self::Right)
+            }
+        } else if initial_position.is_same_column(final_position) {
+            if is_above {
+                Some(Self::Down)
+            } else {
+                Some(Self::Up)
+            }
+        } else if initial_position.is_same_diagonal(final_position) {
+            if is_above {
+                if is_right_to {
+                    Some(Self::DownLeft)
+                } else {
+                    Some(Self::DownRight)
+                }
+            } else {
+                if is_right_to {
+                    Some(Self::UpLeft)
+                } else {
+                    Some(Self::UpRight)
+                }
+            }
+        } else {
+            None
+        }
+    }
 }
 
 impl BoardIter {
@@ -101,15 +137,15 @@ impl Iterator for BoardIter {
 }
 
 impl Position {
-    pub fn new_position(x: i8, y: i8) -> Self {
+    fn new_position(x: i8, y: i8) -> Self {
         assert!( 0 < x && x < 9, "Expected 0 < x < 9, found {}",x);
         assert!( 0 < y && y < 9, "Expected 0 < y < 9, found {}",y);
         Self {x: x, y: y}
     }
-    pub fn get_x(&self) -> i8 {
+    fn get_x(&self) -> i8 {
         self.x
     }
-    pub fn get_y(&self) -> i8 {
+    fn get_y(&self) -> i8 {
         self.y
     }
     fn get_y_board(&self) -> usize {
@@ -118,25 +154,37 @@ impl Position {
     fn get_x_board(&self) -> usize {
         (self.x - 1) as usize
     }
-    pub fn is_same_row(&self, position: Position) -> bool {
+    fn is_same_row(&self, position: Position) -> bool {
         self.y == position.get_y()
     }
-    pub fn is_same_column(&self, position: Position) -> bool {
+    fn is_same_column(&self, position: Position) -> bool {
         self.x == position.get_x()
     }
-    pub fn is_same_diagonal(&self, position: Position) -> bool {
+    fn is_same_diagonal(&self, position: Position) -> bool {
         let distances = self.distances(position);
         distances[0] == distances[1]
     }
-    pub fn distances(&self, position: Position) -> [i32; 2] {
+    fn distances(&self, position: Position) -> [i32; 2] {
         let distance_x = self.x - position.get_x();
         let distance_x = (distance_x as i32).abs();
         let distance_y = self.y - position.get_y();
         let distance_y = (distance_y as i32).abs();
         [distance_x, distance_y]
     }
-    pub fn is_valid_position(x: i8, y:i8) -> bool {
+    fn is_valid_position(x: i8, y:i8) -> bool {
         0 < x && x < 9 && 0 < y && y < 9
+    }
+    fn is_right_to(&self, final_position: Position) -> bool {
+        self.get_x() > final_position.get_x()
+    }
+    fn is_left_to(&self, final_position: Position) -> bool {
+        self.get_x() < final_position.get_x()
+    }
+    fn is_above(&self, final_position: Position) -> bool {
+        self.get_y() > final_position.get_y()
+    }
+    fn is_below(&self, final_position: Position) -> bool {
+        self.get_y() < final_position.get_y()
     }
 }
 impl PartialEq for Position {
@@ -364,32 +412,32 @@ impl Board {
                 None => return false,
         };
         match piece {
-            Piece::Queen(_)  => Self::can_queen_move(initial_pos, final_pos),
-            Piece::Rook(_)   => Self::can_rook_move(initial_pos, final_pos),
-            Piece::Knight(_) => Self::can_knight_move(initial_pos, final_pos),
-            Piece::King(_)   => Self::can_king_move(initial_pos, final_pos),
-            Piece::Bishop(_) => Self::can_bishop_move(initial_pos, final_pos),
+            Piece::Queen(_)  => self.can_queen_move(initial_pos, final_pos),
+            Piece::Rook(_)   => self.can_rook_move(initial_pos, final_pos),
+            Piece::Knight(_) => self.can_knight_move(initial_pos, final_pos),
+            Piece::King(_)   => self.can_king_move(initial_pos, final_pos),
+            Piece::Bishop(_) => self.can_bishop_move(initial_pos, final_pos),
             Piece::Pawn(_)   => self.can_pawn_move(initial_pos, final_pos),
         }
     }
-    fn can_queen_move(initial_pos: Position, final_pos: Position) -> bool {
+    fn can_queen_move(&self, initial_pos: Position, final_pos: Position) -> bool {
         initial_pos.is_same_row(final_pos) || initial_pos.is_same_column(final_pos) || initial_pos.is_same_diagonal(final_pos)
     }
-    fn can_rook_move(initial_pos: Position, final_pos: Position) -> bool {
+    fn can_rook_move(&self, initial_pos: Position, final_pos: Position) -> bool {
         initial_pos.is_same_row(final_pos) || initial_pos.is_same_column(final_pos)
     }
-    fn can_bishop_move(initial_pos: Position, final_pos: Position) -> bool {
+    fn can_bishop_move(&self, initial_pos: Position, final_pos: Position) -> bool {
         initial_pos.is_same_diagonal(final_pos)
     }
-    fn can_king_move(initial_pos: Position, final_pos: Position) -> bool {
+    fn can_king_move(&self, initial_pos: Position, final_pos: Position) -> bool {
         let distances = initial_pos.distances(final_pos);
         distances[0] + distances[1] <= 2 && distances[0] < 2 && distances[1] < 2
     }
-    fn can_knight_move(initial_pos: Position, final_pos: Position) -> bool {
+    fn can_knight_move(&self, initial_pos: Position, final_pos: Position) -> bool {
         let distances = initial_pos.distances(final_pos);
         distances[0] == 2 && distances[1] == 1 || distances[0] == 1 && distances[1] == 2
     }
-    fn can_pawn_move(&self, initial_pos: Position, final_pos: Position) -> bool {
+    fn can_pawn_move(&self,  initial_pos: Position, final_pos: Position) -> bool {
         unimplemented!()
     }
     fn get_piece(&self, position: Position) -> Option<Piece> {
